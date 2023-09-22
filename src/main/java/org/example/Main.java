@@ -1,13 +1,14 @@
 package org.example;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
 public class Main {
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
 
         Runnable logic = () -> {
             String text = generateRoute("RLRFR", 100);
@@ -17,19 +18,22 @@ public class Main {
                     ++count;
                 }
             }
-            if (sizeToFreq.containsKey(count)) {
-                sizeToFreq.put(count, sizeToFreq.get(count) + 1);
-            } else {
-                sizeToFreq.put(count, 1);
+            synchronized (sizeToFreq) {
+                if (sizeToFreq.containsKey(count)) {
+                    sizeToFreq.put(count, sizeToFreq.get(count) + 1);
+                } else {
+                    sizeToFreq.put(count, 1);
+                }
             }
-            System.out.println(count);
         };
 
         for (int i = 0; i < 100; i++) {
             Thread thread = new Thread(logic);
             thread.start();
         }
+        Thread.sleep(3000);
 
+        System.out.println(generateString(sizeToFreq));
     }
 
     public static String generateRoute(String letters, int length) {
@@ -39,5 +43,19 @@ public class Main {
             route.append(letters.charAt(random.nextInt(letters.length())));
         }
         return route.toString();
+    }
+
+    public static String generateString(Map<Integer, Integer> map) {
+        StringBuilder builder = new StringBuilder();
+        Optional<Map.Entry<Integer, Integer>> maxEntry = map.entrySet()
+                .stream()
+                .max(Map.Entry.comparingByValue());
+        int maxValueCount = maxEntry.get().getValue();
+        int maxValue = maxEntry.get().getKey();
+        builder.append("Maximum povoterniy - ").append(maxValueCount).append(" U elementa ").append(maxValue).append("\n");
+        map.remove(maxValue);
+        builder.append("Drugie povtoreniya - ");
+        builder.append(map.entrySet().stream().sorted((a, b) -> b.getValue() - a.getValue()).collect(Collectors.toList()));
+        return builder.toString();
     }
 }
