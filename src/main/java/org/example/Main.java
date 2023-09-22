@@ -8,32 +8,38 @@ import org.apache.commons.lang3.StringUtils;
 public class Main {
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
 
         Runnable logic = () -> {
             String text = generateRoute("RLRFR", 100);
             int count = 0;
-            for(int i = 0; i < text.length(); ++i) {
+            for (int i = 0; i < text.length(); ++i) {
                 if ('R' == text.charAt(i)) {
                     ++count;
                 }
             }
             synchronized (sizeToFreq) {
+                System.out.println(Thread.currentThread().getName() + " ZAHVATIL");
                 if (sizeToFreq.containsKey(count)) {
                     sizeToFreq.put(count, sizeToFreq.get(count) + 1);
                 } else {
                     sizeToFreq.put(count, 1);
                 }
+                sizeToFreq.notify();
             }
         };
+
+        Thread freqlog = new MyThread(sizeToFreq);
+        freqlog.start();
 
         for (int i = 0; i < 100; i++) {
             Thread thread = new Thread(logic);
             thread.start();
         }
-        Thread.sleep(3000);
 
-        System.out.println(generateString(sizeToFreq));
+        //Thread.sleep(3000);
+
+        //System.out.println(generateString(sizeToFreq));
     }
 
     public static String generateRoute(String letters, int length) {
